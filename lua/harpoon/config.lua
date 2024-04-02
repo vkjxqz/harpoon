@@ -57,6 +57,7 @@ function M.get_default_config()
         settings = {
             save_on_toggle = false,
             sync_on_ui_close = false,
+
             key = function()
                 return vim.loop.cwd()
             end,
@@ -205,6 +206,11 @@ function M.get_default_config()
 
                     item.context.row = pos[1]
                     item.context.col = pos[2]
+
+                    Extensions.extensions:emit(
+                        Extensions.event_names.POSITION_UPDATED,
+                        item
+                    )
                 end
             end,
 
@@ -227,6 +233,15 @@ function M.merge_config(partial_config, latest_config)
         else
             config[k] = vim.tbl_extend("force", config[k] or {}, v)
         end
+    end
+    return config
+end
+
+---@param settings HarpoonPartialSettings
+function M.create_config(settings)
+    local config = M.get_default_config()
+    for k, v in ipairs(settings) do
+        config.settings[k] = v
     end
     return config
 end

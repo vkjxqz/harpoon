@@ -193,7 +193,6 @@ function HarpoonUI:save()
     end
 
     Logger:log("ui#save", list)
-    print("saving", vim.inspect(list))
     self.active_list:resolve_displayed(list, length)
     if self.settings.sync_on_ui_close then
         require("harpoon"):sync()

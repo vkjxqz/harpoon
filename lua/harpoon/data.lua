@@ -1,43 +1,44 @@
 local Path = require("plenary.path")
 
 local data_path = vim.fn.stdpath("data")
-local full_data_path = string.format("%s/harpoon.json", data_path)
+
+---@param config HarpoonConfig
+local filename = function(config)
+    return config.settings.key()
+end
+
+local function hash(path)
+    return vim.fn.sha256(path)
+end
+
+---@param config HarpoonConfig
+local function fullpath(config)
+    local h = hash(filename(config))
+    return string.format("%s/%s.json", data_path, h)
+end
 
 ---@param data any
-local function write_data(data)
-    Path:new(full_data_path):write(vim.json.encode(data), "w")
+---@param config HarpoonConfig
+local function write_data(data, config)
+    Path:new(fullpath(config)):write(vim.json.encode(data), "w")
 end
 
 local M = {}
 
-function M.__dangerously_clear_data()
-    write_data({})
+---@param config HarpoonConfig
+function M.__dangerously_clear_data(config)
+    write_data({}, config)
 end
 
 function M.info()
     return {
         data_path = data_path,
-        full_data_path = full_data_path,
     }
-end
-
-function M.set_data_path(path)
-    full_data_path = path
-end
-
-local function has_keys(t)
-    -- luacheck: ignore 512
-    for _ in pairs(t) do
-        return true
-    end
-
-    return false
 end
 
 --- @alias HarpoonRawData {[string]: {[string]: string[]}}
 
 --- @class HarpoonData
---- @field seen {[string]: {[string]: boolean}}
 --- @field _data HarpoonRawData
 --- @field has_error boolean
 local Data = {}
@@ -48,34 +49,37 @@ local Data = {}
 
 Data.__index = Data
 
+---@param config HarpoonConfig
+---@param provided_path string?
 ---@return HarpoonRawData
-local function read_data()
-    local path = Path:new(full_data_path)
+local function read_data(config, provided_path)
+    provided_path = provided_path or fullpath(config)
+    local path = Path:new(provided_path)
     local exists = path:exists()
 
     if not exists then
-        write_data({})
+        write_data({}, config)
     end
 
     local out_data = path:read()
 
     if not out_data or out_data == "" then
-        write_data({})
-        out_data = path:read()
+        write_data({}, config)
+        out_data = "{}"
     end
 
     local data = vim.json.decode(out_data)
     return data
 end
 
+---@param config HarpoonConfig
 ---@return HarpoonData
-function Data:new()
-    local ok, data = pcall(read_data)
+function Data:new(config)
+    local ok, data = pcall(read_data, config)
 
     return setmetatable({
         _data = data,
         has_error = not ok,
-        seen = {},
     }, self)
 end
 
@@ -100,12 +104,6 @@ function Data:data(key, name)
         )
     end
 
-    if not self.seen[key] then
-        self.seen[key] = {}
-    end
-
-    self.seen[key][name] = true
-
     return self:_get_data(key, name)
 end
 
@@ -126,10 +124,6 @@ function Data:sync()
         return
     end
 
-    if not has_keys(self.seen) then
-        return
-    end
-
     local ok, data = pcall(read_data)
     if not ok then
         error("Harpoon: unable to sync data, error reading data file")
@@ -139,13 +133,16 @@ function Data:sync()
         data[k] = v
     end
 
-    ok = pcall(write_data, data)
-
-    if ok then
-        self.seen = {}
-    end
+    pcall(write_data, data)
 end
 
 M.Data = Data
+M.test = {
+    set_fullpath = function(fp)
+        fullpath = fp
+    end,
+
+    read_data = read_data,
+}
 
 return M

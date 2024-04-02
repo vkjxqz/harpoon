@@ -134,15 +134,15 @@ function HarpoonList:add(item)
             end
         end
 
-        Extensions.extensions:emit(
-            Extensions.event_names.ADD,
-            { list = self, item = item, idx = idx }
-        )
-
         self.items[idx] = item
         if idx > self._length then
             self._length = idx
         end
+
+        Extensions.extensions:emit(
+            Extensions.event_names.ADD,
+            { list = self, item = item, idx = idx }
+        )
     end
 
     return self
@@ -154,14 +154,15 @@ function HarpoonList:prepend(item)
     local index = index_of(self.items, item, self.config)
     Logger:log("HarpoonList:prepend", { item = item, index = index })
     if index == -1 then
-        Extensions.extensions:emit(
-            Extensions.event_names.ADD,
-            { list = self, item = item, idx = 1 }
-        )
         local stop_idx = prepend_to_array(self.items, item)
         if stop_idx > self._length then
             self._length = stop_idx
         end
+
+        Extensions.extensions:emit(
+            Extensions.event_names.ADD,
+            { list = self, item = item, idx = 1 }
+        )
     end
 
     return self
@@ -173,15 +174,15 @@ function HarpoonList:remove(item)
     for i = 1, self._length do
         local v = self.items[i]
         if self.config.equals(v, item) then
-            Extensions.extensions:emit(
-                Extensions.event_names.REMOVE,
-                { list = self, item = item, idx = i }
-            )
             Logger:log("HarpoonList:remove", { item = item, index = i })
             self.items[i] = nil
             if i == self._length then
                 self._length = determine_length(self.items, self._length)
             end
+            Extensions.extensions:emit(
+                Extensions.event_names.REMOVE,
+                { list = self, item = item, idx = i }
+            )
             break
         end
     end
@@ -195,14 +196,14 @@ function HarpoonList:remove_at(index)
             "HarpoonList:removeAt",
             { item = self.items[index], index = index }
         )
-        Extensions.extensions:emit(
-            Extensions.event_names.REMOVE,
-            { list = self, item = self.items[index], idx = index }
-        )
         self.items[index] = nil
         if index == self._length then
             self._length = determine_length(self.items, self._length)
         end
+        Extensions.extensions:emit(
+            Extensions.event_names.REMOVE,
+            { list = self, item = self.items[index], idx = index }
+        )
     end
     return self
 end
@@ -228,14 +229,12 @@ function HarpoonList:resolve_displayed(displayed, length)
 
     local list_displayed = self:display()
 
+    local change = 0
     for i = 1, self._length do
         local v = self.items[i]
         local index = index_of(displayed, v)
         if index == -1 then
-            Extensions.extensions:emit(
-                Extensions.event_names.REMOVE,
-                { list = self, item = self.items[i], idx = i }
-            )
+            change = change + 1
         end
     end
 
@@ -246,28 +245,26 @@ function HarpoonList:resolve_displayed(displayed, length)
             new_list[i] = nil
         elseif index == -1 then
             new_list[i] = self.config.create_list_item(self.config, v)
-            Extensions.extensions:emit(
-                Extensions.event_names.ADD,
-                { list = self, item = new_list[i], idx = i }
-            )
+            change = change + 1
         else
-            if index ~= i then
-                Extensions.extensions:emit(
-                    Extensions.event_names.REORDER,
-                    { list = self, item = self.items[index], idx = i }
-                )
-            end
             local index_in_new_list =
                 index_of(new_list, self.items[index], self.config)
 
             if index_in_new_list == -1 then
                 new_list[i] = self.items[index]
             end
+
+            if index ~= i then
+                change = change + 1
+            end
         end
     end
 
     self.items = new_list
     self._length = length
+    if change > 0 then
+        Extensions.extensions:emit(Extensions.event_names.LIST_CHANGE)
+    end
 end
 
 function HarpoonList:select(index, options)

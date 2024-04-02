@@ -1,4 +1,5 @@
 local Data = require("harpoon.data")
+local Config = require("harpoon.config")
 
 local M = {}
 
@@ -20,15 +21,24 @@ function M.return_to_checkpoint()
     M.clean_files()
 end
 
+local function fullpath(name)
+    return function()
+        return name
+    end
+end
+
 ---@param name string
 function M.before_each(name)
+    local set_fullpath = fullpath(name)
+    local config = Config.get_default_config()
     return function()
-        Data.set_data_path(name)
-        Data.__dangerously_clear_data()
+        Data.test.set_fullpath(set_fullpath)
+        --- we don't use the config
+        Data.__dangerously_clear_data(config)
 
         require("plenary.reload").reload_module("harpoon")
         Data = require("harpoon.data")
-        Data.set_data_path(name)
+        Data.test.set_fullpath(set_fullpath)
         local harpoon = require("harpoon")
 
         M.return_to_checkpoint()

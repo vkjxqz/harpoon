@@ -2,10 +2,22 @@ local utils = require("harpoon.test.utils")
 local harpoon = require("harpoon")
 local Extensions = require("harpoon.extensions")
 local Config = require("harpoon.config")
+local Data = require("harpoon.data")
+local List = require("harpoon.list")
 
 local eq = assert.are.same
-
+local config = Config.get_default_config()
 local be = utils.before_each(os.tmpname())
+
+local function expect_data(data)
+    local read_data = Data.test.read_data(config)
+    local testies = read_data.testies
+
+    for k, v in pairs(data) do
+        local list = List.decode(Config.get_config(config, k), k, testies[k])
+        eq(v, list.items)
+    end
+end
 
 describe("harpoon", function()
     before_each(function()
@@ -24,7 +36,8 @@ describe("harpoon", function()
             "qux",
         }, row, col)
 
-        local list = harpoon:list():add()
+        harpoon:setup()
+        harpoon:list():add()
         local other_buf = utils.create_file("other-file", {
             "foo",
             "bar",
@@ -36,11 +49,17 @@ describe("harpoon", function()
         vim.api.nvim_win_set_cursor(0, { row + 1, col })
         vim.api.nvim_set_current_buf(other_buf)
 
-        local expected = {
-            { value = file_name, context = { row = row + 1, col = col } },
-        }
-
-        eq(expected, list.items)
+        expect_data({
+            [Config.DEFAULT_LIST] = {
+                {
+                    context = {
+                        col = 0,
+                        row = 2,
+                    },
+                    value = "/tmp/harpoon-test",
+                },
+            },
+        })
     end)
 
     it("full harpoon add sync cycle", function()
@@ -67,7 +86,6 @@ describe("harpoon", function()
     end)
 
     it("prepend/add double add", function()
-        local default_list_name = harpoon:info().default_list_name
         local file_name_1 = "/tmp/harpoon-test"
         local row_1 = 3
         local col_1 = 1
@@ -79,31 +97,38 @@ describe("harpoon", function()
         local contents = { "foo", "bar", "baz", "qux" }
 
         local bufnr_1 = utils.create_file(file_name_1, contents, row_1, col_1)
-        local list = harpoon:list():add()
+        harpoon:list():add()
 
-        utils.create_file(file_name_2, contents, row_2, col_2)
-        harpoon:list():prepend()
-
-        harpoon:sync()
-
-        eq(harpoon:dump(), {
-            testies = {
-                [default_list_name] = list:encode(),
+        expect_data({
+            [Config.DEFAULT_LIST] = {
+                { value = file_name_1, context = { row = row_1, col = col_1 } },
             },
         })
 
-        eq(list.items, {
-            { value = file_name_2, context = { row = row_2, col = col_2 } },
-            { value = file_name_1, context = { row = row_1, col = col_1 } },
+        utils.create_file(file_name_2, contents, row_2, col_2)
+        harpoon:list():prepend()
+        expect_data({
+            [Config.DEFAULT_LIST] = {
+                { value = file_name_2, context = { row = row_2, col = col_2 } },
+                { value = file_name_1, context = { row = row_1, col = col_1 } },
+            },
         })
 
         harpoon:list():add()
+        expect_data({
+            [Config.DEFAULT_LIST] = {
+                { value = file_name_2, context = { row = row_2, col = col_2 } },
+                { value = file_name_1, context = { row = row_1, col = col_1 } },
+            },
+        })
+
         vim.api.nvim_set_current_buf(bufnr_1)
         harpoon:list():prepend()
-
-        eq(list.items, {
-            { value = file_name_2, context = { row = row_2, col = col_2 } },
-            { value = file_name_1, context = { row = row_1, col = col_1 } },
+        expect_data({
+            [Config.DEFAULT_LIST] = {
+                { value = file_name_2, context = { row = row_2, col = col_2 } },
+                { value = file_name_1, context = { row = row_1, col = col_1 } },
+            },
         })
     end)
 
@@ -111,7 +136,7 @@ describe("harpoon", function()
         local list_created = false
         local list_name = ""
         local setup = false
-        local config = {}
+        local ext_config = {}
 
         harpoon:extend({
             [Extensions.event_names.LIST_CREATED] = function(list)
@@ -120,7 +145,7 @@ describe("harpoon", function()
             end,
             [Extensions.event_names.SETUP_CALLED] = function(c)
                 setup = true
-                config = c
+                ext_config = c
             end,
         })
 
@@ -130,7 +155,7 @@ describe("harpoon", function()
         harpoon:list()
 
         eq(true, setup)
-        eq({}, config.foo)
+        eq({}, ext_config.foo)
 
         eq(true, list_created)
         eq(Config.DEFAULT_LIST, list_name)
