@@ -218,7 +218,7 @@ function HarpoonList:get_by_display(name)
     if index == -1 then
         return nil
     end
-    return self.items[index]
+    return self.items[index], index
 end
 
 --- much inefficiencies.  dun care
