@@ -41,6 +41,7 @@ end
 --- @class HarpoonData
 --- @field _data HarpoonRawData
 --- @field has_error boolean
+--- @field config HarpoonConfig
 local Data = {}
 
 -- 1. load the data
@@ -80,6 +81,7 @@ function Data:new(config)
     return setmetatable({
         _data = data,
         has_error = not ok,
+        config = config,
     }, self)
 end
 
@@ -124,7 +126,7 @@ function Data:sync()
         return
     end
 
-    local ok, data = pcall(read_data)
+    local ok, data = pcall(read_data, self.config)
     if not ok then
         error("Harpoon: unable to sync data, error reading data file")
     end
@@ -133,7 +135,7 @@ function Data:sync()
         data[k] = v
     end
 
-    pcall(write_data, data)
+    pcall(write_data, data, self.config)
 end
 
 M.Data = Data
