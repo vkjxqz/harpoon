@@ -167,7 +167,8 @@ function HarpoonUI:select_menu_item(options)
     -- must first save any updates potentially made to the list before
     -- navigating
     local list = Buffer.get_contents(self.bufnr)
-    self.active_list:resolve_displayed(list)
+    local length = #list
+    self.active_list:resolve_displayed(list, length)
 
     Logger:log(
         "ui#select_menu_item selecting item",
