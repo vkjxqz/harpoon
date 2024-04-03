@@ -1,6 +1,18 @@
 local Path = require("plenary.path")
 
-local data_path = vim.fn.stdpath("data")
+local data_path = string.format("%s/harpoon", vim.fn.stdpath("data"))
+local ensured_data_path = false
+local function ensure_data_path()
+    if ensured_data_path then
+        return
+    end
+
+    local path = Path:new(data_path)
+    if not path:exists() then
+        path:mkdir()
+    end
+    ensured_data_path = true
+end
 
 ---@param config HarpoonConfig
 local filename = function(config)
@@ -54,6 +66,8 @@ Data.__index = Data
 ---@param provided_path string?
 ---@return HarpoonRawData
 local function read_data(config, provided_path)
+    ensure_data_path()
+
     provided_path = provided_path or fullpath(config)
     local path = Path:new(provided_path)
     local exists = path:exists()
