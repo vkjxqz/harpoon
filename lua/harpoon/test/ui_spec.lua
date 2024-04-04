@@ -81,6 +81,35 @@ describe("harpoon", function()
         eq(created_files, list:display())
     end)
 
+    it("ui with replace_at", function()
+        local one_f = os.tmpname()
+        local one = utils.create_file(one_f, { "one", })
+        local three_f = os.tmpname()
+        local three = utils.create_file(three_f, { "three", })
+        local context = { row = 1, col = 0 }
+
+        eq(0, harpoon:list():length())
+        vim.api.nvim_set_current_buf(three)
+
+        harpoon:list():replace_at(3)
+        eq(3, harpoon:list():length())
+
+        vim.api.nvim_set_current_buf(one)
+        harpoon:list():replace_at(1)
+        eq(3, harpoon:list():length())
+
+        harpoon.ui:toggle_quick_menu(harpoon:list())
+
+        key("<CR>")
+
+        eq(3, harpoon:list():length())
+        eq({
+            { value = one_f, context = context },
+            nil,
+            { value = three_f, context = context },
+        }, harpoon:list().items)
+    end)
+
     it("using :q to leave harpoon should quit everything", function()
         harpoon.ui:toggle_quick_menu(harpoon:list())
 

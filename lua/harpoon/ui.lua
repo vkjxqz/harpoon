@@ -160,14 +160,19 @@ function HarpoonUI:toggle_quick_menu(list, opts)
     })
 end
 
+function HarpoonUI:_get_processed_ui_contents()
+    local list = Buffer.get_contents(self.bufnr)
+    local length = #list
+    return list, length
+end
+
 ---@param options? any
 function HarpoonUI:select_menu_item(options)
     local idx = vim.fn.line(".")
 
     -- must first save any updates potentially made to the list before
     -- navigating
-    local list = Buffer.get_contents(self.bufnr)
-    local length = #list
+    local list, length = self:_get_processed_ui_contents()
     self.active_list:resolve_displayed(list, length)
 
     Logger:log(
@@ -185,13 +190,7 @@ function HarpoonUI:select_menu_item(options)
 end
 
 function HarpoonUI:save()
-    local list = Buffer.get_contents(self.bufnr)
-    local length = #list
-    for i, v in ipairs(list) do
-        if v == "" then
-            list[i] = nil
-        end
-    end
+    local list, length = self:_get_processed_ui_contents()
 
     Logger:log("ui#save", list)
     self.active_list:resolve_displayed(list, length)

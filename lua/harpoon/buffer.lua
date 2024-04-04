@@ -89,9 +89,7 @@ function M.get_contents(bufnr)
     local indices = {}
 
     for _, line in pairs(lines) do
-        if not utils.is_white_space(line) then
-            table.insert(indices, line)
-        end
+        table.insert(indices, line)
     end
 
     return indices
