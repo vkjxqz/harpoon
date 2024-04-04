@@ -29,13 +29,14 @@ end
 ---@param items any[]
 ---@param element any
 ---@param config HarpoonPartialConfigItem?
-local function index_of(items, element, config)
+local function index_of(items, length, element, config)
     local equals = config and config.equals
         or function(a, b)
             return a == b
         end
     local index = -1
-    for i, item in ipairs(items) do
+    for i = 1, length do
+        local item = items[i]
         if equals(element, item) then
             index = i
             break
@@ -81,8 +82,8 @@ function HarpoonList:new(config, name, items)
     return setmetatable({
         items = items,
         config = config,
-        _length = guess_length(items),
         name = name,
+        _length = guess_length(items),
         _index = 1,
     }, self)
 end
@@ -108,21 +109,31 @@ end
 ---@param item? HarpoonListItem
 function HarpoonList:replace_at(idx, item)
     item = item or self.config.create_list_item(self.config)
+    local current_idx = index_of(self.items, self._length, item, self.config)
+
+    self.items[idx] = item
+
+    if current_idx ~= idx then
+        self.items[current_idx] = nil
+    end
+
+    if idx > self._length then
+        self._length = idx
+    else
+        self._length = determine_length(self.items, self._length)
+    end
+
     Extensions.extensions:emit(
         Extensions.event_names.REPLACE,
         { list = self, item = item, idx = idx }
     )
-    self.items[idx] = item
-    if idx > self._length then
-        self._length = idx
-    end
 end
 
 ---@param item? HarpoonListItem
 function HarpoonList:add(item)
     item = item or self.config.create_list_item(self.config)
 
-    local index = index_of(self.items, item, self.config)
+    local index = index_of(self.items, self._length, item, self.config)
     Logger:log("HarpoonList:add", { item = item, index = index })
 
     if index == -1 then
@@ -151,7 +162,7 @@ end
 ---@return HarpoonList
 function HarpoonList:prepend(item)
     item = item or self.config.create_list_item(self.config)
-    local index = index_of(self.items, item, self.config)
+    local index = index_of(self.items, self._length, item, self.config)
     Logger:log("HarpoonList:prepend", { item = item, index = index })
     if index == -1 then
         local stop_idx = prepend_to_array(self.items, item)
@@ -214,7 +225,7 @@ end
 
 function HarpoonList:get_by_display(name)
     local displayed = self:display()
-    local index = index_of(displayed, name, self.config)
+    local index = index_of(displayed, #displayed, name, self.config)
     if index == -1 then
         return nil
     end
@@ -232,7 +243,7 @@ function HarpoonList:resolve_displayed(displayed, length)
     local change = 0
     for i = 1, self._length do
         local v = self.items[i]
-        local index = index_of(displayed, v)
+        local index = index_of(displayed, self._length, v)
         if index == -1 then
             change = change + 1
         end
@@ -240,7 +251,7 @@ function HarpoonList:resolve_displayed(displayed, length)
 
     for i = 1, length do
         local v = displayed[i]
-        local index = index_of(list_displayed, v)
+        local index = index_of(list_displayed, self._length, v)
         if v == "" then
             new_list[i] = nil
         elseif index == -1 then
@@ -248,7 +259,7 @@ function HarpoonList:resolve_displayed(displayed, length)
             change = change + 1
         else
             local index_in_new_list =
-                index_of(new_list, self.items[index], self.config)
+                index_of(new_list, length, self.items[index], self.config)
 
             if index_in_new_list == -1 then
                 new_list[i] = self.items[index]

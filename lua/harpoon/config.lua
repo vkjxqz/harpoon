@@ -149,6 +149,7 @@ function M.get_default_config()
                 elseif list_item_a == nil or list_item_b == nil then
                     return false
                 end
+
                 return list_item_a.value == list_item_b.value
             end,
 
