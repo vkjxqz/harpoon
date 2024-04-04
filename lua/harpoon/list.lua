@@ -226,7 +226,7 @@ end
 
 function HarpoonList:get_by_display(name)
     local displayed = self:display()
-    local index = index_of(displayed, #displayed, name, self.config)
+    local index = index_of(displayed, #displayed, name)
     if index == -1 then
         return nil
     end

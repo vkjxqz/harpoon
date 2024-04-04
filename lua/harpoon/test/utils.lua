@@ -1,4 +1,5 @@
 local Data = require("harpoon.data")
+local Path = require("plenary.path")
 local Config = require("harpoon.config")
 
 local M = {}
@@ -19,6 +20,15 @@ function M.return_to_checkpoint()
 
     vim.api.nvim_set_current_buf(checkpoint_file_bufnr)
     M.clean_files()
+end
+
+---@param k string
+function M.key(k)
+    vim.api.nvim_feedkeys(
+        vim.api.nvim_replace_termcodes(k, true, false, true),
+        "x",
+        true
+    )
 end
 
 local function fullpath(name)
@@ -64,12 +74,12 @@ end
 ---@param name string
 ---@param contents string[]
 function M.create_file(name, contents, row, col)
+    Path:new(name):write(table.concat(contents, "\n"), "w")
     local bufnr = vim.fn.bufnr(name, true)
     vim.api.nvim_set_option_value("bufhidden", "hide", {
         buf = bufnr,
     })
     vim.api.nvim_set_current_buf(bufnr)
-    vim.api.nvim_buf_set_text(0, 0, 0, 0, 0, contents)
     if row then
         vim.api.nvim_win_set_cursor(0, { row or 1, col or 0 })
     end

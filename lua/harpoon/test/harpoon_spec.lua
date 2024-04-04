@@ -1,5 +1,9 @@
 local utils = require("harpoon.test.utils")
+local logger = require("harpoon.logger")
+
+---@type Harpoon
 local harpoon = require("harpoon")
+
 local Extensions = require("harpoon.extensions")
 local Config = require("harpoon.config")
 local Data = require("harpoon.data")
@@ -19,9 +23,43 @@ local function expect_data(data)
     end
 end
 
+---@param out {row: number, col: number}
+---@param expected {row: number, col: number}
+local function out_of_bounds_test(out, expected)
+    local file_name = "/tmp/harpoon-test"
+    local list = harpoon:list()
+    local to_unload = utils.create_file(file_name, {
+        "foo",
+        "bar",
+        "baz",
+        "qux",
+    })
+    list:add()
+
+    utils.create_file(file_name .. "2", {
+        "foo",
+        "bar",
+        "baz",
+        "qux",
+    })
+
+    vim.api.nvim_buf_delete(to_unload, {force = true})
+
+    -- i have to force it to be out of bounds
+    list.items[1].context = out
+
+    harpoon:list():select(1)
+
+    eq({
+        { value = file_name, context = expected}
+    }, harpoon:list().items)
+
+end
+
 describe("harpoon", function()
     before_each(function()
         be()
+        logger:clear()
         harpoon = require("harpoon")
     end)
 
@@ -82,6 +120,36 @@ describe("harpoon", function()
             testies = {
                 [default_list_name] = list:encode(),
             },
+        })
+    end)
+
+    it("out of bounds test: row over", function()
+        out_of_bounds_test({
+            row = 5,
+            col = 3
+        }, {
+            row = 4,
+            col = 3
+        })
+    end)
+
+    it("out of bounds test: col over", function()
+        out_of_bounds_test({
+            row = 4,
+            col = 4
+        }, {
+            row = 4,
+            col = 3
+        })
+    end)
+
+    it("out of bounds test: both over", function()
+        out_of_bounds_test({
+            row = 5,
+            col = 4
+        }, {
+            row = 4,
+            col = 3
         })
     end)
 

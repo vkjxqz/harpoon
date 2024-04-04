@@ -135,7 +135,7 @@ end
 local the_harpoon = Harpoon:new()
 
 ---@param self Harpoon
----@param partial_config HarpoonPartialConfig
+---@param partial_config HarpoonPartialConfig?
 ---@return Harpoon
 function Harpoon.setup(self, partial_config)
     if self ~= the_harpoon then

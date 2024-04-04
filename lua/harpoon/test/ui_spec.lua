@@ -5,15 +5,6 @@ local harpoon = require("harpoon")
 local eq = assert.are.same
 local be = utils.before_each(os.tmpname())
 
----@param k string
-local function key(k)
-    vim.api.nvim_feedkeys(
-        vim.api.nvim_replace_termcodes(k, true, false, true),
-        "x",
-        true
-    )
-end
-
 describe("harpoon", function()
     before_each(function()
         be()
@@ -100,7 +91,7 @@ describe("harpoon", function()
 
         harpoon.ui:toggle_quick_menu(harpoon:list())
 
-        key("<CR>")
+        utils.key("<CR>")
 
         eq(3, harpoon:list():length())
         eq({
@@ -155,7 +146,7 @@ describe("harpoon", function()
         eq(vim.api.nvim_win_is_valid(win_id), true)
         eq(vim.api.nvim_get_current_buf(), bufnr)
 
-        key("<C-w><C-w>")
+        utils.key("<C-w><C-w>")
 
         eq(vim.api.nvim_buf_is_valid(bufnr), false)
         eq(vim.api.nvim_win_is_valid(win_id), false)
@@ -173,7 +164,7 @@ describe("harpoon", function()
         eq(vim.api.nvim_win_is_valid(win_id), true)
         eq(vim.api.nvim_get_current_buf(), bufnr)
 
-        key("q")
+        utils.key("q")
 
         eq(vim.api.nvim_buf_is_valid(bufnr), false)
         eq(vim.api.nvim_win_is_valid(win_id), false)
@@ -191,7 +182,7 @@ describe("harpoon", function()
         eq(vim.api.nvim_win_is_valid(win_id), true)
         eq(vim.api.nvim_get_current_buf(), bufnr)
 
-        key("<Esc>")
+        utils.key("<Esc>")
 
         eq(vim.api.nvim_buf_is_valid(bufnr), false)
         eq(vim.api.nvim_win_is_valid(win_id), false)

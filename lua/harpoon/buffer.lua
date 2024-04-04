@@ -16,6 +16,7 @@ local function get_harpoon_menu_name()
 end
 
 function M.run_select_command()
+    ---@type Harpoon
     local harpoon = require("harpoon")
     harpoon.logger:log("select by keymap '<CR>'")
     harpoon.ui:select_menu_item()
