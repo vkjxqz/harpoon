@@ -140,7 +140,8 @@ function M.get_default_config()
                     end
 
                     local row = list_item.context.row
-                    local row_text = vim.api.nvim_buf_get_lines(0, row - 1, row, false)
+                    local row_text =
+                        vim.api.nvim_buf_get_lines(0, row - 1, row, false)
                     local col = #row_text[1]
 
                     if list_item.context.col > col then
@@ -154,9 +155,12 @@ function M.get_default_config()
                     })
 
                     if edited then
-                        Extensions.extensions:emit(Extensions.event_names.POSITION_UPDATED, {
-                            list_item = list_item
-                        })
+                        Extensions.extensions:emit(
+                            Extensions.event_names.POSITION_UPDATED,
+                            {
+                                list_item = list_item,
+                            }
+                        )
                     end
                 end
 

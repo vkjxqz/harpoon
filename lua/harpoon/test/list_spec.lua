@@ -270,7 +270,6 @@ describe("list", function()
             { value = "four" },
             { value = "one" },
         }, list.items)
-
     end)
 
     it("resolve_displayed", function()

@@ -74,9 +74,9 @@ describe("harpoon", function()
 
     it("ui with replace_at", function()
         local one_f = os.tmpname()
-        local one = utils.create_file(one_f, { "one", })
+        local one = utils.create_file(one_f, { "one" })
         local three_f = os.tmpname()
-        local three = utils.create_file(three_f, { "three", })
+        local three = utils.create_file(three_f, { "three" })
         local context = { row = 1, col = 0 }
 
         eq(0, harpoon:list():length())

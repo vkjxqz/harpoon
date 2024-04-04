@@ -43,7 +43,7 @@ local function out_of_bounds_test(out, expected)
         "qux",
     })
 
-    vim.api.nvim_buf_delete(to_unload, {force = true})
+    vim.api.nvim_buf_delete(to_unload, { force = true })
 
     -- i have to force it to be out of bounds
     list.items[1].context = out
@@ -51,9 +51,8 @@ local function out_of_bounds_test(out, expected)
     harpoon:list():select(1)
 
     eq({
-        { value = file_name, context = expected}
+        { value = file_name, context = expected },
     }, harpoon:list().items)
-
 end
 
 describe("harpoon", function()
@@ -126,30 +125,30 @@ describe("harpoon", function()
     it("out of bounds test: row over", function()
         out_of_bounds_test({
             row = 5,
-            col = 3
+            col = 3,
         }, {
             row = 4,
-            col = 3
+            col = 3,
         })
     end)
 
     it("out of bounds test: col over", function()
         out_of_bounds_test({
             row = 4,
-            col = 4
+            col = 4,
         }, {
             row = 4,
-            col = 3
+            col = 3,
         })
     end)
 
     it("out of bounds test: both over", function()
         out_of_bounds_test({
             row = 5,
-            col = 4
+            col = 4,
         }, {
             row = 4,
-            col = 3
+            col = 3,
         })
     end)
 

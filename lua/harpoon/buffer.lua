@@ -1,4 +1,3 @@
-local utils = require("harpoon.utils")
 local HarpoonGroup = require("harpoon.autocmd")
 
 local M = {}
