@@ -75,7 +75,7 @@ describe("harpoon", function()
 
         harpoon:setup()
         harpoon:list():add()
-        local other_buf = utils.create_file("other-file", {
+        local other_buf = utils.create_file("/tmp/other-file", {
             "foo",
             "bar",
             "baz",
