@@ -102,7 +102,7 @@ end
 ---@param item? HarpoonListItem
 ---@return HarpoonList
 function HarpoonList:append(item)
-    print("APPEND IS DEPRICATED -- PLEASE USE `add`")
+    print("APPEND IS DEPRECATED -- PLEASE USE `add`")
     return self:add(item)
 end
 
