@@ -360,11 +360,6 @@ function HarpoonList.decode(list_config, name, items)
     local list_items = {}
 
     for _, item in ipairs(items) do
-        -- this is here to prevent a breaking change by converting saved relative paths to absolute. remove after some time
-        local decodedItem = vim.json.decode(item)
-        decodedItem.value = vim.loop.fs_realpath(decodedItem.value)
-        item = vim.json.encode(decodedItem)
-
         table.insert(list_items, list_config.decode(item))
     end
 

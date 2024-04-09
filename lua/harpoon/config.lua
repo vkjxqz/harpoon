@@ -77,7 +77,12 @@ function M.get_default_config()
             ---@param str string
             ---@return HarpoonListItem
             decode = function(str)
-                return vim.json.decode(str)
+                local decodedItem = vim.json.decode(str)
+
+                -- NOTE: prevents this absolute path sometimes bug by forcing
+                -- everything to be absolute path always
+                decodedItem.value = vim.loop.fs_realpath(decodedItem.value)
+                return decodedItem
             end,
 
             ---@param list_item HarpoonListItem
