@@ -190,11 +190,6 @@ function M.get_default_config()
             ---@return HarpoonListItem
             create_list_item = function(config, name)
                 name = name
-                    -- TODO: should we do path normalization???
-                    -- i know i have seen sometimes it becoming an absolute
-                    -- path, if that is the case we can use the context to
-                    -- store the bufname and then have value be the normalized
-                    -- value
                     or normalize_path(
                         vim.api.nvim_buf_get_name(
                             vim.api.nvim_get_current_buf()
@@ -224,8 +219,11 @@ function M.get_default_config()
             ---@param list HarpoonList
             BufLeave = function(arg, list)
                 local bufnr = arg.buf
-                local bufname = vim.api.nvim_buf_get_name(bufnr)
-                local item = list:get_by_display(bufname)
+                local bufname = normalize_path(
+                    vim.api.nvim_buf_get_name(bufnr),
+                    list.config.get_root_dir()
+                )
+                local item = list:get_by_value(bufname)
 
                 if item then
                     local pos = vim.api.nvim_win_get_cursor(0)
