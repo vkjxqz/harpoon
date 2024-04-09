@@ -188,10 +188,10 @@ function M.get_default_config()
                 return vim.loop.cwd()
             end,
 
-            ---@param config HarpoonPartialConfigItem
+            ---@param _ HarpoonPartialConfigItem
             ---@param name? any
             ---@return HarpoonListItem
-            create_list_item = function(config, name)
+            create_list_item = function(_, name)
                 if name ~= "" then
                     if name then
                         name = vim.fs.normalize(name)
