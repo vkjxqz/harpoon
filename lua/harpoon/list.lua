@@ -224,9 +224,16 @@ function HarpoonList:get(index)
     return self.items[index]
 end
 
-function HarpoonList:get_by_display(name)
-    local displayed = self:display()
-    local index = index_of(displayed, #displayed, name)
+function HarpoonList:get_by_path(path)
+    path = vim.loop.fs_realpath(vim.fs.normalize(path))
+    local index = index_of(self.items, self:length(), path, {
+        equals = function(a, b)
+            if b == nil then
+                return false
+            end
+            return a == b.value
+        end,
+    })
     if index == -1 then
         return nil
     end
@@ -329,7 +336,7 @@ function HarpoonList:display()
     local out = {}
     for i = 1, self._length do
         local v = self.items[i]
-        out[i] = v == nil and "" or self.config.display(v)
+        out[i] = v == nil and "" or self.config.display(v, self.config)
     end
 
     return out
@@ -353,6 +360,11 @@ function HarpoonList.decode(list_config, name, items)
     local list_items = {}
 
     for _, item in ipairs(items) do
+        -- this is here to prevent a breaking change by converting saved relative paths to absolute. remove after some time
+        local decodedItem = vim.json.decode(item)
+        decodedItem.value = vim.loop.fs_realpath(decodedItem.value)
+        item = vim.json.encode(decodedItem)
+
         table.insert(list_items, list_config.decode(item))
     end
 

@@ -4,9 +4,6 @@ local Path = require("plenary.path")
 local function normalize_path(buf_name, root)
     return Path:new(buf_name):make_relative(root)
 end
-local function to_exact_name(value)
-    return "^" .. value .. "$"
-end
 
 local M = {}
 local DEFAULT_LIST = "__harpoon_files"
@@ -20,7 +17,7 @@ M.DEFAULT_LIST = DEFAULT_LIST
 ---@field select_with_nil? boolean defaults to false
 ---@field encode? (fun(list_item: HarpoonListItem): string) | boolean
 ---@field decode? (fun(obj: string): any)
----@field display? (fun(list_item: HarpoonListItem): string)
+---@field display? (fun(list_item: HarpoonListItem, config: HarpoonPartialConfigItem): string)
 ---@field select? (fun(list_item?: HarpoonListItem, list: HarpoonList, options: any?): nil)
 ---@field equals? (fun(list_line_a: HarpoonListItem, list_line_b: HarpoonListItem): boolean)
 ---@field create_list_item? fun(config: HarpoonPartialConfigItem, item: any?): HarpoonListItem
@@ -84,8 +81,9 @@ function M.get_default_config()
             end,
 
             ---@param list_item HarpoonListItem
-            display = function(list_item)
-                return list_item.value
+            ---@param config HarpoonPartialConfigItem
+            display = function(list_item, config)
+                return normalize_path(list_item.value, config.get_root_dir())
             end,
 
             --- the select function is called when a user selects an item from
@@ -106,7 +104,7 @@ function M.get_default_config()
 
                 options = options or {}
 
-                local bufnr = vim.fn.bufnr(to_exact_name(list_item.value))
+                local bufnr = vim.fn.bufnr(list_item.value)
                 local set_position = false
                 if bufnr == -1 then -- must create a buffer!
                     set_position = true
@@ -189,18 +187,16 @@ function M.get_default_config()
             ---@param name? any
             ---@return HarpoonListItem
             create_list_item = function(config, name)
-                name = name
-                    -- TODO: should we do path normalization???
-                    -- i know i have seen sometimes it becoming an absolute
-                    -- path, if that is the case we can use the context to
-                    -- store the bufname and then have value be the normalized
-                    -- value
-                    or normalize_path(
-                        vim.api.nvim_buf_get_name(
+                if name ~= "" then
+                    if name then
+                        name = vim.fs.normalize(name)
+                    else
+                        name = vim.api.nvim_buf_get_name(
                             vim.api.nvim_get_current_buf()
-                        ),
-                        config.get_root_dir()
-                    )
+                        )
+                    end
+                    name = vim.loop.fs_realpath(name)
+                end
 
                 Logger:log("config_default#create_list_item", name)
 
@@ -225,7 +221,7 @@ function M.get_default_config()
             BufLeave = function(arg, list)
                 local bufnr = arg.buf
                 local bufname = vim.api.nvim_buf_get_name(bufnr)
-                local item = list:get_by_display(bufname)
+                local item = list:get_by_path(bufname)
 
                 if item then
                     local pos = vim.api.nvim_win_get_cursor(0)
