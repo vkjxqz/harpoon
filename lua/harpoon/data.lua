@@ -25,8 +25,7 @@ end
 
 ---@param config HarpoonConfig
 local function fullpath(config)
-    local h = "hello"
-    return string.format("%s/%s.json", data_path, h)
+    return string.format("%s/hello.json", data_path)
 end
 
 ---@param data any
